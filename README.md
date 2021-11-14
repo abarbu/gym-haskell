@@ -11,6 +11,9 @@ These bindings must be used with Nix. There are too many dependencies to get
 just right for any other setup. To run, just clone the repo and do `stack
 build`. Nix is enabled by default in the `stack.yaml` file.
 
+box2d and ROMs are automatically installed for all Atari environments. We don't
+yet install mujoco for you.
+
 ```haskell
 import Simulator.Gym as G
 import qualified Data.Vector.Storable as VS
