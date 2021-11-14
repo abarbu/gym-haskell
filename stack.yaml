@@ -1,0 +1,12 @@
+resolver: lts-18.13
+packages:
+  - '.'
+
+extra-deps:
+  - git: https://github.com/zsedem/haskell-cpython
+    commit: 42f27b3d9e2c2b5f022ef7e8fd125110c3dadd79
+flags: {}
+extra-package-dbs: []
+nix:
+  enable: true
+  shell-file: shell.nix

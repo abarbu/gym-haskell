@@ -1,0 +1,45 @@
+name:                gym
+version:             0.1.0.0
+github:              "abarbu/gym-haskell"
+license:             BSD3
+author:              "Andrei Barbu"
+maintainer:          "andrei@0xab.com"
+copyright:           "2021 Andrei Barbu"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+synopsis:            Bindings to OpenAI's gym environment
+category:            Machine Learning
+
+description:         Please see the README on GitHub at <https://github.com/abarbu/gym-haskell>
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+  dependencies:
+    - cpython
+    - containers
+    - text
+    - vector
+    - bytestring
+
+tests:
+  gym-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -rtsopts
+    # It's important that we turn threading off for now! See Readme
+    # - -threaded
+    # - -with-rtsopts=-N
+    dependencies:
+    - gym
+    - tasty
+    - tasty-hunit
+    - tasty-expected-failure
+    - tasty-bench
+    - vector
