@@ -1,6 +1,6 @@
 # Haskell OpenAI Gym Bindings
 
-[![Build Status](https://github.com/abarbu/gym-haskell/actions/workflows/CI.yaml/badge.svg)](https://github.com/abarbu/gym-haskell/actions/workflows/CI.yaml)
+[![Build Status](https://github.com/abarbu/gym-haskell/actions/workflows/ci.yaml/badge.svg)](https://github.com/abarbu/gym-haskell/actions/workflows/CI.yaml)
 [![Hackage](https://img.shields.io/hackage/v/gym.svg)](https://hackage.haskell.org/package/gym)
 
 High performance bindings to the Gym suitable for machine learning. Unlike other
