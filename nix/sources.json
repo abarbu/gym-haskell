@@ -58,6 +58,36 @@
         "type": "tarball",
         "url": "https://github.com/input-output-hk/stackage.nix/archive/1301f5d364ed6c704103a558e49b08b63096b810.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "mujoco": {
+        "sha256": "a436ca2f4144c38b837205635bbd60ffe1162d5b44c87df22232795978d7d012",
+        "type": "file",
+        "url": "https://mujoco.org/download/mujoco210-linux-x86_64.tar.gz",
+        "url_template": "https://mujoco.org/download/mujoco210-linux-x86_64.tar.gz"
+    },
+    "mujoco-py": {
+        "branch": "master",
+        "description": "MuJoCo is a physics engine for detailed, efficient rigid body simulations with contacts. mujoco-py allows using MuJoCo from Python 3.",
+        "homepage": "",
+        "owner": "openai",
+        "repo": "mujoco-py",
+        "rev": "fb4babe73b1ef18b4bea4c6f36f6307e06335a2f",
+        "sha256": "1vns1p9wdhn1b96hqzj5lcpjhmhhb0zj5crh6rglkya4jr2bakv4",
+        "type": "tarball",
+        "url": "https://github.com/openai/mujoco-py/archive/fb4babe73b1ef18b4bea4c6f36f6307e06335a2f.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "pyGLFW": {
+        "branch": "master",
+        "description": "Python bindings for GLFW",
+        "homepage": null,
+        "owner": "FlorianRhiem",
+        "repo": "pyGLFW",
+        "rev": "e988aa623a4a8da08b53f68246424306c4fa5982",
+        "sha256": "0pchs33jrrlgq8zcsv6xzll6gllylz99nibacfg4xxybhqsnrbc0",
+        "type": "tarball",
+        "url": "https://github.com/FlorianRhiem/pyGLFW/archive/e988aa623a4a8da08b53f68246424306c4fa5982.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
 

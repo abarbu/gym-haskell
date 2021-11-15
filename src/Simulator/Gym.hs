@@ -12,6 +12,7 @@ module Simulator.Gym
   ,seed
   ,sample
   ,version
+  ,importModule
   ,State(..)
   ,Space(..)
   ,Env(..)
@@ -86,6 +87,11 @@ step e a = catchPy $ do
                    , stateReward = r
                    , stateIsDone = d /= 0
                    , stateInfo = i }
+    VTuple [o, VArrayInt64 [r], VArrayBool [d], VDict i] ->
+      pure $ State { stateObservation = o
+                   , stateReward = fromIntegral r
+                   , stateIsDone = not d -- TODO This seems very wrong
+                   , stateInfo = i }
     _ -> error $ "Unexpected state type: " <> show s
 
 -- | Make a new environment with default parameters
@@ -97,6 +103,7 @@ make' :: Text -> Map Text AnyPy -> IO Env
 make' id kwargs = catchPy $ do
   _ <- P.initialize
   _ <- P.importModule "gym"
+  _ <- P.importModule "numpy"
   e <- P.call "gym" "make" [P.arg id] (M.toList $ fmap (\(AnyPy x) -> P.arg x) kwargs)
   --
   (tbox       :: Py.Type) <- getType "gym.spaces.box" "Box"
@@ -128,6 +135,11 @@ make' id kwargs = catchPy $ do
   where getType path ty = do
           (o :: Py.SomeObject) <- P.getAttribute path ty
           fromJust <$> Py.cast o
+
+-- | Third-party environments must be registered first, this is done by
+-- importing them. Provide the module name here.
+importModule :: Text -> IO ()
+importModule name = catchPy $ P.importModule name >> pure ()
 
 -- TODO add makeVectorized
 

@@ -1,11 +1,12 @@
-let
-  sources = import nix/sources.nix {};
-  haskell-nix = (import sources."haskell.nix" {});
-  nixpkgs = haskell-nix.pkgs;
-  gitignore = (import sources."gitignore.nix" {
+{ sources ? (import nix/sources.nix {}),
+  haskell-nix ? (import sources."haskell.nix" {}),
+  nixpkgs ? haskell-nix.pkgs,
+  gitignore ? ((import sources."gitignore.nix" {
     inherit (nixpkgs) lib;
-  }).gitignoreSource;
+  }).gitignoreSource)
+}:
 
+let
   src = nixpkgs.lib.cleanSourceWith {
     name = "gym";
     src = gitignore ./.;
@@ -16,7 +17,10 @@ let
        overlays =
          haskell-nix.overlays ++
          [(self: super: {
-            "python3.8" = pkgs.python38Packages.python;
+           "python3.8" = pkgs.python38Packages.python;
+           mesa = super.mesa.override {
+             enableOSMesa = true;
+           };
           })];
      });
 in

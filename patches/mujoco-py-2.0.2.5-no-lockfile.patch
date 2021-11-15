@@ -1,0 +1,15 @@
+diff --git a/mujoco_py/builder.py b/mujoco_py/builder.py
+index e63e3de..376b6a7 100644
+--- a/mujoco_py/builder.py
++++ b/mujoco_py/builder.py
+@@ -89,9 +89,7 @@ The easy solution is to `import mujoco_py` _before_ `import glfw`.
+     builder = Builder(mujoco_path)
+     cext_so_path = builder.get_so_file_path()
+ 
+-    lockpath = os.path.join(os.path.dirname(cext_so_path), 'mujocopy-buildlock')
+-
+-    with fasteners.InterProcessLock(lockpath):
++    if True:
+         mod = None
+         force_rebuild = os.environ.get('MUJOCO_PY_FORCE_REBUILD')
+         if force_rebuild:

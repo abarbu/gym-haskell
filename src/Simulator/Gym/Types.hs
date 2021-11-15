@@ -5,6 +5,8 @@ import qualified CPython.Internal as P
 import qualified CPython.Types as Py
 import qualified CPython.Protocols.Object as Py
 import qualified CPython.Types.Dictionary as PyD
+import qualified CPython.Types.Tuple as PyT
+import qualified CPython.Types.Unicode as PyU
 import qualified CPython.Simple as P
 import Data.Map.Strict (Map)
 import qualified Data.Text as T
@@ -17,8 +19,10 @@ import Data.Maybe ( fromJust, catMaybes )
 import Data.ByteString(ByteString)
 import qualified Data.ByteString.Internal as BS
 import Foreign.ForeignPtr ( castForeignPtr )
+import Foreign.Storable
 import Control.Monad ( (<=<) )
 import Control.Exception
+import qualified CPython.Types.Exception as PyExc
 
 -- * Misc helpers
 
@@ -35,8 +39,20 @@ printTypeOf x = do
   x' <- Py.fromUnicode =<< Py.string =<< Py.getType x
   print x'
 
+pyExceptionHandler :: PyExc.Exception -> IO ()
+pyExceptionHandler exception = do
+        tracebackModule <- P.importModule "traceback"
+        print_exc <- PyU.toUnicode "print_exception" >>= Py.getAttribute tracebackModule
+        kwargs <- PyD.new
+        args <- case PyExc.exceptionTraceback exception of
+          Just tb -> PyT.toTuple [PyExc.exceptionType exception, PyExc.exceptionValue exception, tb]
+          _ -> PyT.toTuple [PyExc.exceptionType exception, PyExc.exceptionValue exception]
+        _ <- Py.call print_exc args kwargs
+        return ()
+
 catchPy f = catch f (\e -> do
                         s <- toString $ P.exceptionValue e
+                        pyExceptionHandler e
                         error $ T.unpack s)
 
 instance P.ToPy Py.SomeObject where
@@ -62,6 +78,7 @@ data DType = DFloat
            | DInt32
            | DInt64
            | DWord8
+           | DBool
            deriving (Show, Eq)
 
 fromDType :: Py.SomeObject -> IO DType
@@ -75,6 +92,7 @@ fromDType o = do
            "int32" -> DInt32
            "int64" -> DInt64
            "uint8" -> DWord8
+           "bool" -> DBool
            _ -> error $ "Unknown dtype " <> show t
 
 -- * Values
@@ -87,6 +105,7 @@ data Value = VDouble Double
            | VArrayInt32 (VS.Vector Int32)
            | VArrayInt64 (VS.Vector Int64)
            | VArrayWord8 (VS.Vector Word8)
+           | VArrayBool (VS.Vector Bool)
            | VTuple [Value]
            | VList [Value]
            | VDict [Value]
@@ -129,30 +148,35 @@ toValue o =
 toVector :: ByteString -> DType -> Value
 toVector s dt =
   case dt of
-    DFloat  -> VArrayFloat $ VS.unsafeFromForeignPtr (castForeignPtr ptr) off (len `div` 4)
-    DDouble -> VArrayDouble $ VS.unsafeFromForeignPtr (castForeignPtr ptr) off (len `div` 8)
-    DInt32  -> VArrayInt32 $ VS.unsafeFromForeignPtr (castForeignPtr ptr) off (len `div` 4)
-    DInt64  -> VArrayInt64 $ VS.unsafeFromForeignPtr (castForeignPtr ptr) off (len `div` 8)
+    DFloat  -> VArrayFloat $ VS.unsafeFromForeignPtr (castForeignPtr ptr) off (len `div` sizeOf (undefined :: Float))
+    DDouble -> VArrayDouble $ VS.unsafeFromForeignPtr (castForeignPtr ptr) off (len `div` sizeOf (undefined :: Double))
+    DInt32  -> VArrayInt32 $ VS.unsafeFromForeignPtr (castForeignPtr ptr) off (len `div` sizeOf (undefined :: Int))
+    DInt64  -> VArrayInt64 $ VS.unsafeFromForeignPtr (castForeignPtr ptr) off (len `div` sizeOf (undefined :: Int64))
     DWord8  -> VArrayWord8 $ VS.unsafeFromForeignPtr (castForeignPtr ptr) off len
+    DBool  -> VArrayBool $ VS.unsafeFromForeignPtr (castForeignPtr ptr) off len
+    _  -> error $ "Can't convert dtype to a vector " <> show dt
   where (ptr, off, len) = BS.toForeignPtr s
 
 fromValue :: Value -> IO Py.SomeObject
 fromValue (VDouble d) = Py.toObject <$> Py.toFloat d
 fromValue (VInt64 d) = Py.toObject <$> Py.toInteger (fromIntegral d)
-fromValue (VArrayFloat a) = Py.toObject <$> Py.toBytes (BS.PS (castForeignPtr ptr) 0 len)
-  where (ptr, len) = VS.unsafeToForeignPtr0 a
-fromValue (VArrayDouble a) = Py.toObject <$> Py.toBytes (BS.PS (castForeignPtr ptr) 0 len)
-  where (ptr, len) = VS.unsafeToForeignPtr0 a
-fromValue (VArrayInt32 a) = Py.toObject <$> Py.toBytes (BS.PS (castForeignPtr ptr) 0 len)
-  where (ptr, len) = VS.unsafeToForeignPtr0 a
-fromValue (VArrayInt64 a) = Py.toObject <$> Py.toBytes (BS.PS (castForeignPtr ptr) 0 len)
-  where (ptr, len) = VS.unsafeToForeignPtr0 a
-fromValue (VArrayWord8 a) = Py.toObject <$> Py.toBytes (BS.PS (castForeignPtr ptr) 0 len)
-  where (ptr, len) = VS.unsafeToForeignPtr0 a
+fromValue (VArrayFloat a) = fromArray a "float32"
+fromValue (VArrayDouble a) = fromArray a "float64"
+fromValue (VArrayInt32 a) = fromArray a "int32"
+fromValue (VArrayInt64 a) = fromArray a "int64"
+fromValue (VArrayWord8 a) = fromArray a "uint8"
 fromValue (VTuple l) = do
   a <- Py.toTuple =<< mapM fromValue l
   pure $ Py.toObject a
 fromValue v = error $ "Don't know how to convert Value to Python " <> show v
+
+fromArray :: forall a. Storable a => VS.Vector a -> Text -> IO Py.SomeObject
+fromArray a dtype = do
+  o <- Py.toObject <$> Py.toBytes (BS.PS (castForeignPtr ptr) 0 (len*nrBytes))
+  f <- P.toPy dtype
+  P.call "numpy" "frombuffer" [P.arg o] [("dtype", P.arg f)]
+  where (ptr, len) = VS.unsafeToForeignPtr0 a
+        nrBytes = sizeOf (undefined :: a)
   
 instance P.FromPy Value where
   fromPy = toValue
