@@ -3,9 +3,12 @@
 , autoPatchelfHook
 , libGL
 , xorg
+, writeText
 , sources
+, mesa
+, withCuda ? false
 }:
-stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   pname = "mujoco";
   version = "2.1";
   src = sources.mujoco;
@@ -33,8 +36,23 @@ stdenv.mkDerivation {
     mkdir $out/lib
     ln -s $out/bin/*.so $out/lib/
   '';
+
   testPhase = ''
     cd sample
     make
+  '';
+
+  ldMesaPath = "${stdenv.lib.makeLibraryPath [mesa.osmesa]}";
+  ldGLPath = "${stdenv.lib.makeLibraryPath [libGL]}";
+  setupHook = writeText "setupHook.sh" ''
+    addMujoco () {
+        export MUJOCO_PY_MUJOCO_PATH=@out@
+        export MUJOCO_BUILD_GPU=${builtins.toString withCuda}
+        addToSearchPath LD_LIBRARY_PATH @out@/bin
+        addToSearchPath LD_LIBRARY_PATH ${ldMesaPath}
+        addToSearchPath LD_LIBRARY_PATH ${ldGLPath}
+    }
+    addEnvHooks "$hostOffset" addMujoco
+    addEnvHooks "$targetOffset" addMujoco
   '';
 }

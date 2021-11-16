@@ -20,18 +20,19 @@
 , fasteners
 , mujoco
 , pkgs
+, writeText
 }:
 let
   src = sources.mujoco-py;
 in
-buildPythonPackage {
+buildPythonPackage rec {
   inherit src;
   pname = "mujoco-py";
   version = "2.0.2.5";
   requirements = builtins.readFile "${src}/requirements.txt";
 
   python = python3;
-  MUJOCO_BUILD_GPU = withCuda;
+  
   nativeBuildInputs = [
     autoPatchelfHook
   ];
@@ -43,6 +44,7 @@ buildPythonPackage {
     cffi
     lockfile
     fasteners
+    mujoco
   ];
   buildInputs = [
     mesa
@@ -63,7 +65,26 @@ buildPythonPackage {
   doCheck = false;
 
   patches = [ ../patches/mujoco-py-2.0.2.5-no-lockfile.patch ];
+  
+  # osmesaPath = "${stdenv.lib.makeLibraryPath [pkgs.mesa.osmesa]}";
 
-  LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ mujoco mesa mesa.osmesa libGL ] + ":" + mujoco + "/bin";
-  MUJOCO_PY_MUJOCO_PATH = mujoco;
+        # export LD_LIBRARY_PATH=$\{LD_LIBRARY_PATH-\}:${pkgs.mesa.osmesa}
+
+  # setupHook = writeText "setupHook.sh" ''
+  #   addMujocoPy () {
+  #       export LD_LIBRARY_PATH=$\{LD_LIBRARY_PATH-\}:${osmesaPath}
+  #       echo ${osmesaPath}
+  #       exit 1
+  #   }
+  #   addEnvHooks "$hostOffset" addMujocoPy
+  #   addEnvHooks "$targetOffset" addMujocoPy
+  # '';
+
+  # LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+  #   pkgs.mujoco
+  #   pkgs.mesa
+  #   pkgs.mesa.osmesa
+  #   pkgs.libGL ] + ":" + pkgs.mujoco + "/bin";
+  # MUJOCO_PY_MUJOCO_PATH = pkgs.mujoco;
+  # X=1;
 }

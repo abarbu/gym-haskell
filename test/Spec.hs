@@ -16,8 +16,9 @@ main = Test.Tasty.Bench.defaultMain
   [testGroup "Unit tests"
    [ testEnvironments
    , toneDownTests "Fragile: Rendering can fail without a GL context" testRendering
-   , benchmarkSteps
-   , benchmarkRendering
+   -- Benchmarks disabled by default
+   -- , benchmarkSteps
+   -- , benchmarkRendering
    ]]
 
 testEnvironments = testGroup "Environments"
