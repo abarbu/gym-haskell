@@ -11,8 +11,7 @@ These bindings must be used with Nix. There are too many dependencies to get
 just right for any other setup. To run, just clone the repo and do `stack
 build`. Nix is enabled by default in the `stack.yaml` file.
 
-box2d and ROMs are automatically installed for all Atari environments. We don't
-yet install mujoco for you.
+MuJoCo, box2d, ROMs for Atari environments, and Mario are installed for you.
 
 ```haskell
 import Simulator.Gym as G
@@ -30,6 +29,6 @@ run = do
    pure ()
 ```
 
-Unfortunately Haskell's CPython bindings have a concurrency bug. This means you
-need to be careful that only a single thread call is calling the bindings. Best
-to disable threading for now entirely on the Haskell side.
+Haskell's CPython bindings don't support the GIL and concurrent access. We have
+custom patches to the bindings that insert locks to avoid crashes. But the API
+is single-threaded as a consequence.
