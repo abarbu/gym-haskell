@@ -64,7 +64,6 @@ in
 pkgs.haskell-nix.stackProject {
   inherit src;
   modules = [({pkgs, ...}: {
-    packages.cpython.patches = [ ./patches/haskell-cpython-3.5.1-nixify-internals-getsize.patch ];
     packages.gym.components.library.build-tools = dependencies;
     packages.gym.components.tests.gym-test.build-tools = dependencies;
     packages.cypthon.components.library.build-tools = dependencies;

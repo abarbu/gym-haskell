@@ -21,6 +21,7 @@ module Simulator.Gym
 where
 
 import qualified CPython.Types as Py
+import qualified CPython.Internal as Py
 import qualified CPython.Protocols.Object as Py
 import qualified CPython.Types.Dictionary as PyD
 import qualified CPython.Simple as P
@@ -34,7 +35,7 @@ import qualified Data.Text as T
 
 -- | Sample from a space. Most useful for sampling from the action space
 sample :: Space -> IO Value
-sample s = catchPy $ toValue =<< Py.callMethodArgs (spacePy s) "sample" []
+sample s = catchPy $ Py.withGIL $ toValue =<< Py.callMethodArgs (spacePy s) "sample" []
 
 -- * Environments
 
@@ -44,17 +45,17 @@ sampleActionSpace e = sample $ envActionSpace e
 
 -- | Set the seed of an environment
 seed :: Env -> Int64 -> IO ()
-seed e s = catchPy $ do
+seed e s = catchPy $ Py.withGIL $ do
   p <- P.toPy s
   Py.callMethodArgs (envPy e) "seed" [p] >> pure ()
 
 -- | Reset an environment to its initial state
 reset :: Env -> IO Observation
-reset e = catchPy $ P.fromPy =<< Py.callMethodArgs (envPy e) "reset" []
+reset e = catchPy $ Py.withGIL $ P.fromPy =<< Py.callMethodArgs (envPy e) "reset" []
 
 -- | Render to a target. The text argument is the mode.
 renderToTarget :: Env -> Text -> IO Py.SomeObject
-renderToTarget e target = catchPy $ do
+renderToTarget e target = catchPy $ Py.withGIL $ do
   args <- Py.toTuple []
   kws <- PyD.new
   do m <- P.toPy ("mode" :: Text)
@@ -69,7 +70,7 @@ renderToScreen e = renderToTarget e "human" >> pure ()
 -- | Render to a buffer by setting mode to "rgb_array". Depending on the system,
 -- this may also render something to a screen.
 renderToImage :: Env -> IO RGB
-renderToImage e = catchPy $ do
+renderToImage e = catchPy $ Py.withGIL $ do
   rgb <- renderToTarget e "rgb_array"
   v <- toValue rgb
   case v of
@@ -78,7 +79,7 @@ renderToImage e = catchPy $ do
 
 -- | Step the environment forward taking the given action
 step :: Env -> Action -> IO State
-step e a = catchPy $ do
+step e a = catchPy $ Py.withGIL $ do
   pya <- fromValue a
   s <- toValue =<< Py.callMethodArgs (envPy e) "step" [pya]
   case s of
@@ -100,7 +101,7 @@ make t = make' t M.empty
 
 -- | Make a new environment with the given parameters
 make' :: Text -> Map Text AnyPy -> IO Env
-make' id kwargs = catchPy $ do
+make' id kwargs = catchPy $ Py.withGIL $ do
   _ <- P.initialize
   _ <- P.importModule "gym"
   _ <- P.importModule "numpy"
@@ -139,14 +140,13 @@ make' id kwargs = catchPy $ do
 -- | Third-party environments must be registered first, this is done by
 -- importing them. Provide the module name here.
 importModule :: Text -> IO ()
-importModule name = catchPy $ P.importModule name >> pure ()
+importModule name = catchPy $ Py.withGIL $ P.importModule name >> pure ()
 
 -- TODO add makeVectorized
 
 -- | Get the OpenAI Gym version
 version :: IO Text
-version = catchPy $ do
+version = catchPy $ Py.withGIL $ do
   _ <- P.initialize
   _ <- P.importModule "gym"
   P.getAttribute "gym" "__version__"
-
