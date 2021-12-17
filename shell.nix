@@ -1,8 +1,8 @@
 args@{ sources ? (import nix/sources.nix {}),
-       withCuda ? false
+       withCuda ? false,
+       package ? import ./default.nix { inherit sources; }
      }:
 let
-  package = import ./default.nix args;
   pkgs = package.pkgs;
   buildInputs = [ pkgs.python38Packages.python
                   pkgs.python38Packages.gym
